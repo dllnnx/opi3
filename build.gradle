@@ -108,7 +108,7 @@ tasks.register('diff') {
 
     def classesToCheck = properties.getProperty('checkDiffClasses', '').split(',')
 
-    if (classesToCheck.isEmpty()) {
+    if (classesToCheck.length == 0) {
       println "No classes to check for changes."
       return
     }
