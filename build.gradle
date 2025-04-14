@@ -100,7 +100,7 @@ tasks.register("xml") {
 
 tasks.register('diff') {
   group = 'versioning'
-  description = 'Проверка изменений и автоматический commit указанных классов в gradle.properties в параметре checkDiffClasses'
+  description = 'Проверка изменений и автоматический commit отслеживаемых в gradle.properties классов'
 
   doLast {
     def properties = new Properties()
@@ -136,7 +136,7 @@ tasks.register('diff') {
       return
     }
 
-    def commitMessage = "Коммит изменений для классов: ${filesToCommit.join(', ')}"
+    def commitMessage = "Автоматический коммит изменений для классов: ${filesToCommit.join(', ')}"
     def gitCommitCommand = "git commit -m \"${commitMessage}\"".execute()
 
     gitCommitCommand.waitFor()
