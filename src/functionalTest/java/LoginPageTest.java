@@ -77,7 +77,9 @@ public class LoginPageTest {
         WebElement passwordConfirmInput = driver.findElement(By.id("confirmPassword"));
         WebElement submitBtn = driver.findElement(By.id("submit"));
 
-        loginInput.sendKeys("a");
+        String randomUsername = "user" + System.currentTimeMillis();
+
+        loginInput.sendKeys(randomUsername);
         passwordInput.sendKeys("1");
         passwordConfirmInput.sendKeys("2");
         submitBtn.click();
@@ -123,16 +125,6 @@ public class LoginPageTest {
 
     @AfterEach
     public void teardown() {
-        try {
-            WebElement logoutButton = driver.findElement(By.id("logout"));
-            logoutButton.click();
-
-            WebElement confirmLogoutButton = driver.findElement(By.id("confirmLogout"));
-            confirmLogoutButton.click();
-        } catch (Exception ignored) {
-
-        }
-
         if (driver != null) {
             driver.quit();
         }

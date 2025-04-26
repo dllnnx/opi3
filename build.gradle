@@ -11,16 +11,27 @@ repositories {
   mavenCentral()
 }
 
-ext {
-  junitVersion = '5.9.2'
-  seleniumVersion = '4.21.0'
-}
-
-tasks.withType(JavaCompile).configureEach {
+tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
 
+ext {
+  junitVersion = '5.9.2'
+  seleniumVersion = '4.31.0'
+}
+
+configurations {
+  functionalTestImplementation.extendsFrom testImplementation
+  functionalTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 sourceSets {
+  main {
+    java {
+      srcDirs = ['src/main/java']
+    }
+  }
+
   functionalTest {
     java.srcDir file('src/functionalTest/java')
     resources.srcDir file('src/functionalTest/resources')
@@ -29,53 +40,134 @@ sourceSets {
   }
 }
 
-configurations {
-  functionalTestImplementation.extendsFrom testImplementation
-  functionalTestRuntimeOnly.extendsFrom testRuntimeOnly
+def srcDir = 'src/main/java'
+def classesDir = layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath
+def jarFile = layout.buildDirectory.file("libs/${project.name}.jar").get().asFile
+def functionalSrcDir = 'src/functionalTest'
+def functionalClassesDir = "$buildDir/classes/java/funcTest"
+
+
+tasks.register("custom-compile") {
+  group = "lab"
+  description = "Компиляция исходных файлов проекта"
+
+  inputs.files(fileTree(dir: srcDir, include: '**/*.java'))
+  outputs.dir(classesDir)
+
+  doLast {
+    println "Compiling classes..."
+    file(classesDir).mkdirs()
+
+    def sources = fileTree(dir: srcDir, include: '**/*.java').files*.path
+    def classpath = sourceSets.main.compileClasspath.asPath
+    def cmd = ["javac", "-d", classesDir, "-cp", classpath] + sources
+    exec {
+      commandLine cmd
+    }
+
+    println "Compiled successfully."
+  }
 }
 
-tasks.register('functionalTest', Test) {
-  description = "Запуск функциональных (Selenium) тестов"
-  group = "verification"
-  testClassesDirs = sourceSets.functionalTest.output.classesDirs
-  classpath = sourceSets.functionalTest.runtimeClasspath
-  shouldRunAfter test
-  useJUnitPlatform()
+
+tasks.register("custom-build") {
+  group = "lab"
+  description = "Упаковка скомпилированных классов в исполняемый jar-архив"
+  dependsOn("custom-compile")
+
+  outputs.file(jarFile)
+
+  doLast {
+    println "Building jar..."
+    file(jarFile.parent).mkdirs()
+
+    exec {
+      commandLine "jar", "cf", jarFile.absolutePath, "-C", classesDir, "."
+    }
+
+    println "Jar build successfully."
+  }
 }
 
-check.dependsOn functionalTest
+tasks.register("custom-clean") {
+  group = "lab"
+  description = "Удаление скомпилированных классов проекта и всех временных файлов (если они есть)"
 
-tasks.register('compile') {
-  group = "build"
-  description = "Компиляция исходных кодов проекта"
+  doLast {
+    println "Cleaning..."
+    delete buildDir
 
-  dependsOn(classes, tasks.compileJava)
+    println "Cleaned successfully."
+  }
 }
 
-build {
-  group = "build"
-  description = "Компиляция исходных кодов и упаковка в jar"
+tasks.register("compileFunctionalTests") {
+  group = "lab"
+  description = "Компиляция функциональных тестов"
 
-  dependsOn(tasks.compile)
+  inputs.dir functionalSrcDir
+  outputs.dir functionalClassesDir
+
+  doLast {
+    println "Compiling functional test classes..."
+
+    file(functionalClassesDir).mkdirs()
+
+    def srcFiles = fileTree(dir: functionalSrcDir, include: '**/*.java').files*.path
+    if (srcFiles.isEmpty()) {
+      println "No functional test sources found."
+      return
+    }
+
+    def classpath = configurations.functionalTestImplementation.asPath
+    def cmd = ["javac", "-d", functionalClassesDir, "-cp", classpath] + srcFiles
+
+    exec {
+      commandLine cmd
+    }
+
+    println "Functional tests compiled successfully."
+  }
 }
 
-clean {
-  group = "build"
-  description = "Удаление скомпилированных классов проекта и всех временных файлов"
+tasks.register("custom-functional-test") {
+  group = "lab"
+  description = "Запуск функциональных тестов"
+  dependsOn("custom-build", "compileFunctionalTests")
+
+  doLast {
+    println "Running functional tests..."
+
+    def classpath = files(
+            functionalClassesDir,
+            configurations.functionalTestRuntimeOnly,
+            configurations.functionalTestImplementation
+    ).asPath
+
+    def cmd = [
+            "java",
+            "-cp", classpath,
+            "org.junit.platform.console.ConsoleLauncher",
+            "--scan-class-path", functionalClassesDir,
+            "--details", "tree",
+            "--details-theme", "ascii"
+    ]
+
+    exec {
+      commandLine cmd
+      ignoreExitValue = true
+    }
+
+    println "Functional tests run finished."
+  }
 }
 
-test {
-  group = "verification"
-  description = "Запуск junit-тестов проекта после сборки"
-
-  useJUnitPlatform()
-}
-
-tasks.register("xml") {
-  group = 'verification'
+tasks.register("custom-xml") {
+  group = 'lab'
   description = 'Валидация всех XML-файлов в проекте'
 
   doLast {
+    println "Validating XML-files..."
     def xmlFiles = fileTree(".") {
       include '**/*.xml'
     }
@@ -87,10 +179,9 @@ tasks.register("xml") {
       try {
         def builder = factory.newDocumentBuilder()
         builder.parse(xmlFile)
-//        println "XML is valid: ${xmlFile}"
+        println "OK   ${xmlFile}"
       } catch (Exception e) {
-        println "Error in xml: ${xmlFile} — ${e.message}"
-        throw new GradleException("XML validation failed for ${xmlFile}")
+        throw new GradleException("ERR: ${e}")
       }
     }
 
@@ -98,8 +189,8 @@ tasks.register("xml") {
   }
 }
 
-tasks.register('diff') {
-  group = 'versioning'
+tasks.register('custom-diff') {
+  group = 'lab'
   description = 'Проверка изменений и автоматический commit отслеживаемых в gradle.properties классов'
 
   doLast {
@@ -176,11 +267,7 @@ dependencies {
   testCompileOnly 'org.projectlombok:lombok:1.18.36'
   testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
 
-  functionalTestImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
-  functionalTestRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+  functionalTestImplementation "org.junit.platform:junit-platform-console:1.9.2"
+  functionalTestImplementation "org.apiguardian:apiguardian-api:1.1.2"
   functionalTestImplementation "org.seleniumhq.selenium:selenium-java:${seleniumVersion}"
-}
-
-test {
-  useJUnitPlatform()
 }

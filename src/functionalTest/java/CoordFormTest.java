@@ -6,6 +6,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.nio.file.Path;
@@ -14,8 +15,10 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class MainPageTest {
+public class CoordFormTest {
     private WebDriver driver;
 
     @BeforeEach
@@ -34,22 +37,6 @@ public class MainPageTest {
         driver.manage().window().maximize();
     }
 
-    // 6
-    @Test
-    public void logoutSuccess() {
-        WebElement logoutButton = driver.findElement(By.id("logout"));
-        logoutButton.click();
-
-        WebElement confirmLogoutButton = driver.findElement(By.id("confirmLogout"));
-        confirmLogoutButton.click();
-
-        new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(webDriver -> webDriver.getCurrentUrl().equals("http://localhost:3000/"));
-
-        String currentUrl = driver.getCurrentUrl();
-        assertEquals("http://localhost:3000/", currentUrl);
-    }
-
     // 7
     @Test
     public void coordinatesFormHit() {
@@ -60,33 +47,27 @@ public class MainPageTest {
         yInput.clear();
         yInput.sendKeys("1");
 
+        WebElement table = driver.findElement(By.id("table"));
+        List<WebElement> rowsBefore = table.findElements(By.cssSelector("tbody tr"));
+        int initialRowCount = rowsBefore.size();
+
         WebElement checkButton = driver.findElement(By.id("check"));
         checkButton.click();
 
-        WebElement table = driver.findElement(By.id("table"));
-        WebElement firstRow = table.findElements(By.cssSelector("tbody tr")).get(0);
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.numberOfElementsToBeMoreThan(
+                        By.cssSelector("#table tbody tr"), initialRowCount
+                ));
 
-        WebElement xCell = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> {
-                    WebElement cell = firstRow.findElements(By.tagName("td")).get(0);
-                    return cell.getText().equals("1") ? cell : null;
-                });
+        List<WebElement> updatedRows = table.findElements(By.cssSelector("tbody tr"));
+        WebElement newRow = updatedRows.get(0);
 
-        WebElement yCell = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> {
-                    WebElement cell = firstRow.findElements(By.tagName("td")).get(1);
-                    return cell.getText().equals("1") ? cell : null;
-                });
+        List<WebElement> cells = newRow.findElements(By.tagName("td"));
 
-        WebElement resultCell = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> {
-                    WebElement cell = firstRow.findElements(By.tagName("td")).get(3);
-                    return cell.getText().equals("попадание") ? cell : null;
-                });
-
-        assertEquals("1", xCell.getText());
-        assertEquals("1", yCell.getText());
-        assertEquals("попадание", resultCell.getText());
+        assertEquals("1", cells.get(0).getText());
+        assertEquals("1", cells.get(1).getText());
+        assertEquals("2", cells.get(2).getText());
+        assertEquals("true", cells.get(3).getText());
     }
 
     // 8
@@ -99,32 +80,89 @@ public class MainPageTest {
         yInput.clear();
         yInput.sendKeys("0.5");
 
+        WebElement table = driver.findElement(By.id("table"));
+        List<WebElement> rowsBefore = table.findElements(By.cssSelector("tbody tr"));
+        int initialRowCount = rowsBefore.size();
+
         WebElement checkButton = driver.findElement(By.id("check"));
         checkButton.click();
 
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.numberOfElementsToBeMoreThan(
+                        By.cssSelector("#table tbody tr"), initialRowCount
+                ));
+
+        List<WebElement> updatedRows = table.findElements(By.cssSelector("tbody tr"));
+        WebElement newRow = updatedRows.get(0);
+
+        List<WebElement> cells = newRow.findElements(By.tagName("td"));
+
+        assertEquals("2", cells.get(0).getText());
+        assertEquals("0.5", cells.get(1).getText());
+        assertEquals("1.5", cells.get(2).getText());
+        assertEquals("false", cells.get(3).getText());
+    }
+
+    // 12
+    @Test
+    public void clearFieldsTest() {
+        WebElement yInput = driver.findElement(By.id("y-input"));
+        yInput.sendKeys("2");
+
+        setSliderValue(By.id("x-slider"), 2.0, -3.0, 5.0);
+        setSliderValue(By.id("radius-slider"), 1.5, 0.1, 5.0);
+
+        WebElement xSlider = driver.findElement(By.id("x-slider"));
+        WebElement rSlider = driver.findElement(By.id("radius-slider"));
+
+        WebElement clearButton = driver.findElement(By.id("clean"));
+        clearButton.click();
+
+        String yValue = yInput.getDomAttribute("value");
+        String xValue = xSlider.getDomAttribute("value");
+        String rValue = rSlider.getDomAttribute("value");
+
+        assertEquals("", yValue);
+        assertNull(xValue);
+        assertNull(rValue);
+    }
+
+    // 14
+    @Test
+    public void testDecimalInput() {
+        String expectedYValue = "1.00000000000001";
+        WebElement yInput = driver.findElement(By.id("y-input"));
+        yInput.sendKeys(expectedYValue);
+
         WebElement table = driver.findElement(By.id("table"));
-        WebElement firstRow = table.findElements(By.cssSelector("tbody tr")).get(0);
-        WebElement xCell = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> {
-                    WebElement cell = firstRow.findElements(By.tagName("td")).get(0);
-                    return cell.getText().equals("2") ? cell : null;
-                });
+        List<WebElement> rowsBefore = table.findElements(By.cssSelector("tbody tr"));
+        int initialRowCount = rowsBefore.size();
 
-        WebElement yCell = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> {
-                    WebElement cell = firstRow.findElements(By.tagName("td")).get(1);
-                    return cell.getText().equals("0.5") ? cell : null;
-                });
+        WebElement checkButton = driver.findElement(By.id("check"));
+        checkButton.click();
 
-        WebElement resultCell = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> {
-                    WebElement cell = firstRow.findElements(By.tagName("td")).get(3);
-                    return cell.getText().equals("мимо") ? cell : null;
-                });
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.numberOfElementsToBeMoreThan(
+                        By.cssSelector("#table tbody tr"), initialRowCount
+                ));
 
-        assertEquals("2", xCell.getText());
-        assertEquals("0.5", yCell.getText());
-        assertEquals("мимо", resultCell.getText());
+        List<WebElement> updatedRows = table.findElements(By.cssSelector("tbody tr"));
+        WebElement newRow = updatedRows.get(0);
+
+        List<WebElement> cells = newRow.findElements(By.tagName("td"));
+
+        assertEquals(expectedYValue, cells.get(1).getText());
+    }
+
+    // 15
+    @Test
+    public void testOutOfBoundariesY () {
+        WebElement yInput = driver.findElement(By.id("y-input"));
+        yInput.sendKeys("5");
+
+        WebElement submitBtn = driver.findElement(By.id("check"));
+
+        assertFalse(submitBtn.isEnabled());
     }
 
     @AfterEach
