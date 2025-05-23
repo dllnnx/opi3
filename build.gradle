@@ -11,13 +11,13 @@ repositories {
   mavenCentral()
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
   options.encoding = 'UTF-8'
 }
 
 ext {
   junitVersion = '5.9.2'
-  seleniumVersion = '4.31.0'
+  seleniumVersion = '4.32.0'
 }
 
 configurations {
@@ -33,10 +33,12 @@ sourceSets {
   }
 
   functionalTest {
-    java.srcDir file('src/functionalTest/java')
-    resources.srcDir file('src/functionalTest/resources')
-    compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
-    runtimeClasspath += output + compileClasspath
+    java {
+      java.srcDir file('src/functionalTest/java')
+      resources.srcDir file('src/functionalTest/resources')
+      compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+      runtimeClasspath += output + compileClasspath
+    }
   }
 }
 
@@ -46,6 +48,11 @@ def jarFile = layout.buildDirectory.file("libs/${project.name}.jar").get().asFil
 def functionalSrcDir = 'src/functionalTest'
 def functionalClassesDir = "$buildDir/classes/java/funcTest"
 
+// опасности -^
+// .get() получает результат сразу, те на момент конфигурации. то есть есть buildDir поменяется позже, то все будет плохо (некорректное значение).
+// вместо этого можно
+// def classesDir = layout.buildDirectory.dir("classes/java/main")
+// и потом юзать classesDir.get().asFile внутри doLast {} или Exec таски
 
 tasks.register("custom-compile") {
   group = "lab"
@@ -270,4 +277,6 @@ dependencies {
   functionalTestImplementation "org.junit.platform:junit-platform-console:1.9.2"
   functionalTestImplementation "org.apiguardian:apiguardian-api:1.1.2"
   functionalTestImplementation "org.seleniumhq.selenium:selenium-java:${seleniumVersion}"
+
+  implementation 'com.github.javaparser:javaparser-core:3.25.6'
 }

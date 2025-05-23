@@ -8,7 +8,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.nio.file.Path;
@@ -41,7 +40,7 @@ public class MainPageTest {
 
     // 6
     @Test
-    public void logoutSuccess() {
+    public void testLogoutSuccess() {
         WebElement logoutButton = driver.findElement(By.id("logout"));
         logoutButton.click();
 
@@ -57,7 +56,7 @@ public class MainPageTest {
 
     // 9
     @Test
-    public void checkStatsTest() {
+    public void testCheckStats() {
         WebElement statsButton = driver.findElement(By.id("user"));
         statsButton.click();
 
@@ -77,7 +76,7 @@ public class MainPageTest {
 
     // 10
     @Test
-    public void deleteAllResultsTest() {
+    public void testDeleteAllResults() {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
         WebElement deleteButton = driver.findElement(By.id("deleteButton"));
         deleteButton.click();
@@ -98,7 +97,7 @@ public class MainPageTest {
 
     // 11
     @Test
-    public void deleteAllResultsCancelTest() {
+    public void testDeleteAllResultsCancel() {
         List<WebElement> initialRows = driver.findElements(By.cssSelector("#table tbody tr"));
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
@@ -118,7 +117,7 @@ public class MainPageTest {
 
     // 13
     @Test
-    public void clickOnGraph() {
+    public void testClickOnGraph() {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         WebElement table = driver.findElement(By.id("table"));
         List<WebElement> rowsBefore = table.findElements(By.cssSelector("tbody tr"));

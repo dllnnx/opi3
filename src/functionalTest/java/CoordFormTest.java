@@ -39,7 +39,7 @@ public class CoordFormTest {
 
     // 7
     @Test
-    public void coordinatesFormHit() {
+    public void testHitFromForm() {
         setSliderValue(By.id("x-slider"), 1.0, -3.0, 5.0);
         setSliderValue(By.id("radius-slider"), 2.0, 0.1, 5.0);
 
@@ -72,7 +72,7 @@ public class CoordFormTest {
 
     // 8
     @Test
-    public void coordinatesFormNotHit() {
+    public void testNotHitFromForm() {
         setSliderValue(By.id("x-slider"), 2.0, -3.0, 5.0);
         setSliderValue(By.id("radius-slider"), 1.5, 0.1, 5.0);
 
@@ -105,7 +105,7 @@ public class CoordFormTest {
 
     // 12
     @Test
-    public void clearFieldsTest() {
+    public void testClearFields() {
         WebElement yInput = driver.findElement(By.id("y-input"));
         yInput.sendKeys("2");
 
@@ -156,7 +156,7 @@ public class CoordFormTest {
 
     // 15
     @Test
-    public void testOutOfBoundariesY () {
+    public void testYOutOfBoundaries() {
         WebElement yInput = driver.findElement(By.id("y-input"));
         yInput.sendKeys("5");
 

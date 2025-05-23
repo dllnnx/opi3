@@ -68,7 +68,7 @@ public class LoginPageTest {
 
     // 3
     @Test
-    public void testRegisterConfirmFail() {
+    public void testRegisterConfirmFailed() {
         WebElement toggleRegister = driver.findElement(By.id("toggleRegister"));
         toggleRegister.click();
 
@@ -84,13 +84,14 @@ public class LoginPageTest {
         passwordConfirmInput.sendKeys("2");
         submitBtn.click();
 
-        String currentUrl = driver.getCurrentUrl();
-        Assertions.assertEquals("http://localhost:3000/", currentUrl);
+        WebElement errorElement = driver.findElement(By.id("errMsg"));
+        String errorText = errorElement.getText();
+        Assertions.assertEquals("Пароли не совпадают", errorText);
     }
 
     // 4
     @Test
-    public void testLoginFail() {
+    public void testLoginFailed() {
         WebElement loginInput = driver.findElement(By.id("login"));
         WebElement passwordInput = driver.findElement(By.id("password"));
         WebElement submitBtn = driver.findElement(By.id("submit"));
@@ -99,13 +100,14 @@ public class LoginPageTest {
         passwordInput.sendKeys("2");
         submitBtn.click();
 
-        String currentUrl = driver.getCurrentUrl();
-        Assertions.assertEquals("http://localhost:3000/", currentUrl);
+        WebElement errorElement = driver.findElement(By.id("errMsg"));
+        String errorText = errorElement.getText();
+        Assertions.assertEquals("Неверный логин или пароль", errorText);
     }
 
     // 5
     @Test
-    public void toggleTheme() {
+    public void testToggleTheme() {
         WebElement switchThemeBtn = driver.findElement(By.id("switch"));
         WebElement html = driver.findElement(By.tagName("html"));
         String initialTheme = html.getDomAttribute("data-theme");
